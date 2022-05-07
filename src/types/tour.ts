@@ -1,22 +1,4 @@
-type rooms = 'Bedroom' | 'Kitchen' | 'Living' | 'Closed Room';
-
-export type _2d = {
-  tour: {
-    id: string,
-    name: rooms,
-    activeRoom: string,
-    rooms: {
-      [key: string]: {
-        type: string
-        name: string
-        filename: string
-        url: string
-        urlMobile: string
-        thumbnail: string
-      }
-    }
-  }
-}
+import {room} from "./room";
 
 export type tour = {
   walls: Array<{
@@ -88,7 +70,7 @@ export type tour = {
       x: number,
       y: number
     }>,
-    "roomName": rooms
+    "roomName": room
   }>,
   cameras: Array<{
     id: string,
@@ -96,13 +78,13 @@ export type tour = {
     y: number,
     mergeAngle: number,
     angle: number,
-    roomName: rooms,
+    roomName: room,
     isActive: boolean,
     highlighted: boolean,
     visibleName: string
   }>,
   placements: {
-    [key in rooms]: {
+    [key in room]: {
       id: string,
       roomName: string,
       type: number,
