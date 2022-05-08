@@ -13,8 +13,6 @@ function App() {
 
   useEffect(() => {
 
-    // THREE.Object3D.DefaultUp.set(0, 0, 1)
-
     if(!ref.current) return;
 
     const scene = new THREE.Scene();
