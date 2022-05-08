@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
+import dat from 'dat.gui';
 import * as THREE from 'three';
-import { tour, images } from "./types";
+import {tour, images, room} from "./types";
 import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
 import {getLnFromFormatted} from "./utils";
 
@@ -15,6 +16,7 @@ function App() {
 
     if(!ref.current) return;
 
+
     const scene = new THREE.Scene();
     const w = window.innerWidth;
     const h = window.innerHeight;
@@ -26,7 +28,7 @@ function App() {
 
     const controls = new OrbitControls( camera, renderer.domElement );
     renderer.setSize( w, h);
-    renderer.setClearColor( new THREE.Color('white'), 1 );
+    // renderer.setClearColor( new THREE.Color('white'), 1 );
     ref.current.appendChild(( renderer.domElement ))
 
     // default all length in meters
@@ -77,12 +79,13 @@ function App() {
             matrix.makeRotationFromEuler(euler)
             matrix.setPosition( midPoint.x/100, midPoint.y/100, 0 );
             wall.applyMatrix4(matrix)
+
           }
         }
       }
     }
 
-
+    // corners red
     for (let room of mainData.rooms){
       room.interiorCorners.map((c) => {
         const geometry = new THREE.BoxGeometry(.1, .1);
@@ -97,10 +100,6 @@ function App() {
     }
 
 
-    // camera.position.setX(mainData.cameras[0].x)
-    // camera.position.setY(mainData.cameras[0].y)
-
-
 
     // helpers
     const axesHelper = new THREE.AxesHelper( 10);
@@ -111,17 +110,68 @@ function App() {
     const gridHelper = new THREE.GridHelper( size, divisions );
     scene.add( gridHelper );
 
+
+    getGui(camera, (room: room | 'Plan') => {
+
+      if (room === 'Plan'){
+        scene.background = null
+        renderer.setClearColor( 0xffffff, 1 );
+        axesHelper.visible = true;
+        gridHelper.visible = true;
+        scene.visible = true
+        return;
+      }
+
+      Object.values(additionalData.tour.rooms).map(_r => {
+        if (_r.name === room){
+          const texture = new THREE.TextureLoader().load( _r.url);
+          texture.mapping = THREE.EquirectangularReflectionMapping;
+          scene.background = texture;
+
+          axesHelper.visible = false;
+          gridHelper.visible = false;
+          scene.visible = false
+        }
+      })
+
+    });
+
     function animate() {
       requestAnimationFrame( animate );
-
-      // cube.rotation.x += 0.01;
-      // cube.rotation.y += 0.01;
-
       renderer.render( scene, camera );
     };
 
     animate();
   }, [])
+
+
+  const getGui = (camera: any, callBack: (room: room | 'Plan') => void) => {
+    let options: {[key: string]: boolean} = {
+      Bedroom: false,
+      Kitchen: false,
+      Living: false,
+      'Closed Room': false,
+      Plan: false,
+    };
+
+
+    let gui = new dat.GUI();
+    gui.add(options, 'Bedroom').name('Bedroom').listen().onChange(() => setChecked('Bedroom'));
+    gui.add(options, 'Kitchen').name('Kitchen').listen().onChange(() => setChecked('Kitchen'));
+    gui.add(options, 'Living').name('Living').listen().onChange(() => setChecked('Living'));
+    gui.add(options, 'Closed Room').name('Closed Room').listen().onChange(() => setChecked('Closed Room'));
+    gui.add(options, 'Plan').name('Plan').listen().onChange(() => setChecked('Plan'));
+
+
+    function setChecked( prop: room | 'Plan' ){
+      for (let param in options){
+        options[param] = false;
+      }
+      options[prop] = true;
+
+      callBack(prop);
+    }
+  }
 
   return (
     <div ref={ref}/>
