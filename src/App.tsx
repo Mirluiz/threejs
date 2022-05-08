@@ -12,6 +12,9 @@ function App() {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+
+    // THREE.Object3D.DefaultUp.set(0, 0, 1)
+
     if(!ref.current) return;
 
     const scene = new THREE.Scene();
@@ -20,21 +23,24 @@ function App() {
     const camera = new THREE.PerspectiveCamera( 60,  w/h, 0.1, 1000 );
     const renderer = new THREE.WebGLRenderer();
 
+    camera.position.set(20,20,20); // Set position like this
+    camera.lookAt(new THREE.Vector3(0,0,0));
+
     const controls = new OrbitControls( camera, renderer.domElement );
     renderer.setSize( w, h);
     renderer.setClearColor( new THREE.Color('white'), 1 );
     ref.current.appendChild(( renderer.domElement ))
 
     // default all length in meters
-    //walls
+    // walls
     for (let wall of mainData.walls){
       const geometry = new THREE.BoxGeometry(
         getLnFromFormatted(wall.lengthFormatted),
         wall.thickness/100,
-        wall.height ?? 2,
+        wall.height ?? 1,
 
       );
-      const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+      const material = new THREE.MeshBasicMaterial( { color: new THREE.Color('grey') } );
       const cube = new THREE.Mesh( geometry, material );
       cube.name = wall.id;
       cube.userData = {
@@ -42,14 +48,12 @@ function App() {
       };
 
       scene.add( cube );
+      // break;
     }
 
     // corners
     for (const corner of mainData.corners){
-      let walls: Array<string> = [];
-
       for (let start of corner.wallStarts){
-        if (walls.includes(start.id))continue;
 
         let startVector = new THREE.Vector3(corner.x, corner.y);
         let endVector;
@@ -58,35 +62,56 @@ function App() {
           if (c.wallEnds.find(w => w.id === start.id))return c;
         })
 
+
         if (endCorner){
-          endVector = new THREE.Vector3(endCorner.x, endCorner.y)
-          startVector.sub(endVector);
-          console.log(startVector);
-
           let wall = scene.getObjectByName(start.id)
+
           if (wall){
-            wall.position.x = startVector.x/100;
-            wall.position.y = startVector.y/100;
+            endVector = new THREE.Vector3(endCorner.x, endCorner.y)
+            const subVector = startVector.clone().sub(endVector);
+            const midPoint = new THREE.Vector3((startVector.x + endVector.x)/2, (startVector.y + endVector.y)/2)
+            const matrix = new THREE.Matrix4();
+            const euler = new THREE.Euler(
+              THREE.MathUtils.degToRad(0),
+              THREE.MathUtils.degToRad(0),
+              Math.atan2(subVector.clone().normalize().y, subVector.clone().normalize().x)
+            )
+            matrix.makeRotationFromEuler(euler)
+            matrix.setPosition( midPoint.x/100, midPoint.y/100, 0 );
+            wall.applyMatrix4(matrix)
           }
-
-          walls.push(start.id)
         }
-
-
       }
     }
 
 
+    for (let room of mainData.rooms){
+      room.interiorCorners.map((c) => {
+        const geometry = new THREE.BoxGeometry(.1, .1);
+        const material = new THREE.MeshBasicMaterial( { color: new THREE.Color('red') } );
+        const cube = new THREE.Mesh( geometry, material );
 
-    camera.position.z = 20;
-    camera.position.setX(mainData.cameras[0].x)
-    camera.position.setY(mainData.cameras[0].y)
+        const matrix = new THREE.Matrix4();
+        matrix.setPosition( c.x/100, c.y/100, 0 );
+        cube.applyMatrix4(matrix);
+        scene.add( cube );
+      })
+    }
+
+
+    // camera.position.setX(mainData.cameras[0].x)
+    // camera.position.setY(mainData.cameras[0].y)
 
 
 
     // helpers
-    const axesHelper = new THREE.AxesHelper( 5 );
+    const axesHelper = new THREE.AxesHelper( 10);
     scene.add( axesHelper );
+    const size = 10;
+    const divisions = 10;
+
+    const gridHelper = new THREE.GridHelper( size, divisions );
+    scene.add( gridHelper );
 
     function animate() {
       requestAnimationFrame( animate );
