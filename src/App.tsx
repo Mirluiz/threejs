@@ -23,12 +23,11 @@ function App() {
     const camera = new THREE.PerspectiveCamera( 60,  w/h, 0.1, 1000 );
     const renderer = new THREE.WebGLRenderer();
 
-    camera.position.set(20,20,20); // Set position like this
+    camera.position.set(0,0,20); // Set position like this
     camera.lookAt(new THREE.Vector3(0,0,0));
 
     const controls = new OrbitControls( camera, renderer.domElement );
     renderer.setSize( w, h);
-    // renderer.setClearColor( new THREE.Color('white'), 1 );
     ref.current.appendChild(( renderer.domElement ))
 
     // default all length in meters
@@ -104,12 +103,6 @@ function App() {
     // helpers
     const axesHelper = new THREE.AxesHelper( 10);
     scene.add( axesHelper );
-    const size = 10;
-    const divisions = 10;
-
-    const gridHelper = new THREE.GridHelper( size, divisions );
-    scene.add( gridHelper );
-
 
     getGui(camera, (room: room | 'Plan') => {
 
@@ -117,7 +110,6 @@ function App() {
         scene.background = null
         renderer.setClearColor( 0xffffff, 1 );
         axesHelper.visible = true;
-        gridHelper.visible = true;
         scene.visible = true
         return;
       }
@@ -129,7 +121,6 @@ function App() {
           scene.background = texture;
 
           axesHelper.visible = false;
-          gridHelper.visible = false;
           scene.visible = false
         }
       })
